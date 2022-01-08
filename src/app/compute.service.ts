@@ -71,7 +71,7 @@ export class ComputeService {
     constructor() {}
     
     async generateModel(model: state.models.SomeModel, reduced: boolean): Promise<void> {
-        const modelParameters: Types.models.parameters.SomeParameters = model.parameters.getPlainModelParameters();
+        const modelParameters: Types.models.parameters.SomeParameters = <any>model.parameters.getPlainModelParameters();
         const action: Types.actions.ModelGeneration = {
             type: "modelGeneration",
             modelParameters: modelParameters,
@@ -101,7 +101,7 @@ export class ComputeService {
     }
     
     async verifyModelUsingLowerApproximation(model: state.models.SomeModel, reduced: boolean): Promise<ApproximationResult> {
-        const modelParameters: Types.models.parameters.SomeParameters = model.parameters.getPlainModelParameters();
+        const modelParameters: Types.models.parameters.SomeParameters = <any>model.parameters.getPlainModelParameters();
         const action: Types.actions.LowerApproximation = {
             type: "lowerApproximation",
             modelParameters: modelParameters,
@@ -128,7 +128,7 @@ export class ComputeService {
     }
     
     async verifyModelUsingUpperApproximation(model: state.models.SomeModel, reduced: boolean): Promise<ApproximationResult> {
-        const modelParameters: Types.models.parameters.SomeParameters = model.parameters.getPlainModelParameters();
+        const modelParameters: Types.models.parameters.SomeParameters = <any>model.parameters.getPlainModelParameters();
         const action: Types.actions.UpperApproximation = {
             type: "upperApproximation",
             modelParameters: modelParameters,
@@ -155,7 +155,7 @@ export class ComputeService {
     }
     
     async verifyModelUsingDominoDfs(model: state.models.SomeModel, reduced: boolean, heuristic: Types.actions.DominoDfsHeuristic): Promise<DominoDfsResult> {
-        const modelParameters: Types.models.parameters.SomeParameters = model.parameters.getPlainModelParameters();
+        const modelParameters: Types.models.parameters.SomeParameters = <any>model.parameters.getPlainModelParameters();
         const action: Types.actions.DominoDfs = {
             type: "dominoDfs",
             modelParameters: modelParameters,

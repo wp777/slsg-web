@@ -74,18 +74,20 @@ export class StvGraphService {
                 style: {
                     "background-color": "blue",
                 },
-            }, {
+            },
+            {
                 selector: "edge",
                 style: {
                     "width": "3px",
                     "curve-style": "bezier",
                     "target-arrow-shape": "triangle",
-                }
-            }, {
+                },
+            },
+            {
                 selector: "node",
                 style: {
-                }
-            }
+                },
+            },
         ];
 
         console.log(nodes.filter(x=>(x.classes || "").includes("bgn")).map(x=>x.data.id));
@@ -93,7 +95,7 @@ export class StvGraphService {
         
         // @todo YK add cytoscape-node-html-label extention for better label render performance
         this.graphLayout = { // "cytoscape.LayoutOptions | cytoscape.BaseLayoutOptions" type leads to errors
-            name: 'breadthfirst',
+            name: "breadthfirst",
             fit: true,
             directed: true,
             padding: 30, 
@@ -114,16 +116,24 @@ export class StvGraphService {
             style: styleArr,
         });
 
-        // console.log([this.cy.nodes().map(x=>Object.keys(x.data('T')))].flat());
+        // console.log([this.cy.nodes().map(x=>Object.keys(x.data("T")))].flat());
         console.log(this.cy);
-        this.cy.elements().on('click', (e) =>{
+        this.cy.elements().on("click", (e) =>{
             let el = e.target;
             console.log(e.target);
+            console.log(e)
             
-            if(el.isNode()){
-                console.log(this.stateLabelsToString(el,true));
-            }else if(el.isEdge()){
-                console.log(this.actionLabelsToString(el,true));
+            if (el.isNode()) {
+                if (graph.nodeClick) {
+                    graph.nodeClick(parseInt(el.data("id").split("_")[1]));
+                }
+                console.log(this.stateLabelsToString(el, true));
+            }
+            else if (el.isEdge()) {
+                if (graph.edgeClick) {
+                    graph.edgeClick(parseInt(el.data("id").split("_")[1]));
+                }
+                console.log(this.actionLabelsToString(el, true));
             }
         })
     }
@@ -131,10 +141,12 @@ export class StvGraphService {
     private stateLabelsToString(el: cytoscape.EdgeSingular, showAll:boolean = false) {
         const visible = this.stateLabels.reduce( (acc,x)=>((acc as any)[x.name]=x.display,acc),{});
         let labels = Object.entries(el.data("T"));
-        if(!showAll)labels = labels.filter(x=> visible[x[0]])
+        if (!showAll) {
+            labels = labels.filter(x=> visible[x[0]]);
+        }
 
-        return labels.length>0 ? "{"+labels.map(x=>x[0]+":"+JSON.stringify(x[1])).join(',\n ')+"}" : "";
-        // return JSON.stringify(el.data("T")).replace(/\"/g, "").split(',').join(',\n ');
+        return labels.length>0 ? "{"+labels.map(x=>x[0]+":"+JSON.stringify(x[1])).join(",\n ")+"}" : "";
+        // return JSON.stringify(el.data("T")).replace(/\"/g, "").split(",").join(",\n ");
     }
 
     private actionLabelsToString(el:cytoscape.EdgeSingular, showAll:boolean = false){
@@ -142,17 +154,17 @@ export class StvGraphService {
         if(!Object.values(visible).some(x=>x==true) || !Array.isArray(el.data("T")))return "";
         
         const labels = el.data("T").map((x: string) => visible[x] ? x : "_" );
-        return labels.length>0 ? "("+labels.join(', ')+")" : "";
+        return labels.length>0 ? "("+labels.join(", ")+")" : "";
     }
 
     private computeStateLabelsList(arr:Array<any>){
         this.stateLabels = [...new Set(flatDeep(arr,2))]
-        .map(x => ({"name": x, "display": false}));        
+        .map(x => ({"name": x, "display": true}));        
     }
 
     private computeActionLabelsList(arr:Array<any>){
         this.actionLabels = [...new Set(flatDeep(arr,2))]
-            .map(x => ({"name": x, "display": false}));
+            .map(x => ({"name": x, "display": true}));
     }
 
     // @todo YK: re-work fix (make it less ugly)
@@ -235,7 +247,7 @@ export class StvGraphService {
         switch (_name) {
             case "bfs":
                 this.graphLayout = {
-                    name: 'breadthfirst',
+                    name: "breadthfirst",
                     fit: true, // whether to fit the viewport to the graph
                     directed: true, // whether the tree is directed downwards (or edges can point in any direction if false)
                     padding: 30, // padding on fit

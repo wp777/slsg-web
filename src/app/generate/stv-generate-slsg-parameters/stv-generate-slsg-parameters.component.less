@@ -1,0 +1,42 @@
+:host {
+    display: block;
+}
+
+#slsg-parameters--formula,
+#agents-form,
+#protocols-form,
+#transitions-form,
+#valuations-form {
+    grid-column: 1 / span 2;
+}
+
+#agents-form,
+#protocols-form,
+#transitions-form,
+#valuations-form {
+    table {
+        width: 100%;
+        th {
+            padding: 3px;
+        }
+        input[type=number] {
+            width: 100%;
+        }
+    }
+    .delete-agent-button,
+    .delete-protocol-button,
+    .delete-transition-button,
+    .delete-valuation-button {
+        padding: 6px 4px;
+    }
+}
+
+#agents-form {
+    position: relative;
+    #add-agent-button {
+        position: absolute;
+        top: -30px;
+        right: 10px;
+        padding: 6px 4px;
+    }
+}

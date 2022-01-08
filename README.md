@@ -1,16 +1,16 @@
-# STV Web
-This project contains STV web interface.
+# SLSG Web
+This project contains SLSG web interface (based on https://github.com/wp777/stv-web using https://gist.github.com/0xjac/85097472043b697ab57ba1b1c7530274).
 
 ## UI development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-This mode is intended for UI development purposes only. **stv-server** is not available in this mode and therefore no server-side computations are available.
+This mode is intended for UI development purposes only. **slsg-server** is not available in this mode and therefore no server-side computations are available.
 ## Build and full development server
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
 
-In this mode **stv-server** is available (it has to be started separately). Use `ng build --watch` to enable automatic rebuild on source code changes.
+In this mode **slsg-server** is available (it has to be started separately). Use `ng build --watch` to enable automatic rebuild on source code changes.
 
 ## Coding guidelines
 1. Don't commit code that does not compile.
@@ -31,7 +31,7 @@ In this mode **stv-server** is available (it has to be started separately). Use 
         container.classList.add(`splitter-${orientation}`);
         const html = `
             <div>
-                <stv-example></stv-example>
+                <slsg-example></slsg-example>
             </div>
         `;
         ```

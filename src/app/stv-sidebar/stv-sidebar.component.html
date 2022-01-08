@@ -2,8 +2,6 @@
     <div class="sidebar-tabs" #sidebarTabs>
         <ul>
             <li class="active" data-sidebar-tab-button-id="generate" (click)="onTabClick($event)">Generate</li>
-            <li data-sidebar-tab-button-id="verify" (click)="onTabClick($event)">Verify</li>
-            <li data-sidebar-tab-button-id="details" (click)="onTabClick($event)">Details</li>
         </ul>
     </div>
     <div class="upper-container" data-sidebar-selected-tab-id="generate" #upperContainer>
@@ -11,9 +9,6 @@
             <stv-mode-selector></stv-mode-selector>
         </div>
         <ng-content></ng-content>
-        <div data-sidebar-tab-id="details">
-            @todo YK render details of selected graph node here
-        </div>
     </div>
     <stv-splitter class="horizontal"></stv-splitter>
     <stv-view-settings></stv-view-settings>

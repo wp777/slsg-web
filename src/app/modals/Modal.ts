@@ -4,7 +4,7 @@ export abstract class Modal {
     private modalContainer: HTMLDivElement | null = null;
     private modal: HTMLDivElement | null = null;
     private title: string;
-    private content: HTMLElement;
+    protected content: HTMLElement;
     
     constructor(title: string, content: HTMLElement | string) {
         this.title = title;

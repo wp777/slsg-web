@@ -11,6 +11,7 @@ import { StvModeSelectorComponent } from "./stv-mode-selector/stv-mode-selector.
 import { StvSidebarComponent } from "./stv-sidebar/stv-sidebar.component";
 import { StvViewSettingsComponent } from "./stv-view-settings/stv-view-settings.component";
 import { VerificationModule } from "./verification/verification.module";
+import { GenerateModule } from "./generate/generate.module";
 import { ConfigProvider, configProviderFactory } from "./config.provider";
 
 @NgModule({
@@ -28,6 +29,7 @@ import { ConfigProvider, configProviderFactory } from "./config.provider";
         CommonModule,
         ReductionModule,
         VerificationModule,
+        GenerateModule,
     ],
     providers: [
         ConfigProvider,

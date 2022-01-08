@@ -1,0 +1,12 @@
+<stv-select [value]="modelType" (valueChanged)="onModelTypeChanged($event)" class="model-type-selector first-in-tab-context" data-sidebar-tab-id="generate">
+    <div data-value="slsg">SLSG</div>
+</stv-select>
+<div class="model-parameters-container" data-sidebar-tab-id="generate">
+    <router-outlet name="generate-model-parameters"></router-outlet>
+</div>
+<div class="actions-container" data-sidebar-tab-id="generate">
+    <div class="row">
+        <button class="theme col-12" (click)="onRenderClick()" [disabled]="!canRender"><span>Render</span></button>
+        <button class="theme col-12" (click)="onGenerateClick()" [disabled]="!canGenerate"><span>Generate</span></button>
+    </div>
+</div>

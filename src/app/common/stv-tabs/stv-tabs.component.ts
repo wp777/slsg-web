@@ -44,6 +44,19 @@ export class StvTabsComponent implements OnInit, AfterViewInit {
         this.ensureAnyTabActive();
     }
     
+    getActiveTabId(): number {
+        const headerElements = this.header?.childNodes as NodeListOf<HTMLElement> | [];
+        let i = 0;
+        let idx = -1;
+        headerElements.forEach((el: any) => {
+            if (el.classList.contains("active")) {
+                idx = i;
+            }
+            ++i;
+        });
+        return idx;
+    }
+    
     onTabsHeaderClick(event: MouseEvent): void {
         if (!(event.target instanceof HTMLElement) || !event.target || event.target.parentElement !== this.header) {
             return;
@@ -82,12 +95,12 @@ export class StvTabsComponent implements OnInit, AfterViewInit {
         }
     }
     
-    selectNthTab(tabIndex: number): void {
+    selectNthTab(tabIndex: number, force: boolean = false): void {
         const selectedHeader = this.selectedHeader;
         const selectedContent = this.selectedContent;
         const header = this.header?.childNodes[tabIndex] as HTMLElement | undefined;
         const content = this.content?.childNodes[tabIndex] as HTMLElement | undefined;
-        if (!header || !content || (header == selectedHeader || content == selectedContent)) {
+        if (!header || !content || (!force && (header == selectedHeader || content == selectedContent))) {
             return;
         }
         if (selectedHeader) {

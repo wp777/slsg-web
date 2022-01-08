@@ -38,6 +38,7 @@ export class StvModelTabsComponent implements OnInit, AfterViewInit {
     }
     
     setModel(model: state.models.SomeModel): void {
+        const needsInvalidating = !!this.model;
         this.model = model;
         const hasGlobalModel = model.globalModel !== null;
         const hasReducedModel = model.reducedModel !== null;
@@ -54,6 +55,9 @@ export class StvModelTabsComponent implements OnInit, AfterViewInit {
             for (let localModelId in localModelNames) {
                 const localModelName = localModelNames[localModelId];
                 if (this.addTab(StvModelTabsComponent.LOCAL_MODEL_TAB_ID_PREFIX + localModelId, localModelName)) {
+                    if (!hasGlobalModel && !addedLocalTab) {
+                        this.activateTab(StvModelTabsComponent.LOCAL_MODEL_TAB_ID_PREFIX + localModelId);
+                    }
                     addedLocalTab = true;
                 }
             }
@@ -73,6 +77,9 @@ export class StvModelTabsComponent implements OnInit, AfterViewInit {
             else if (addedGlobalTab) {
                 this.activateTab(StvModelTabsComponent.GLOBAL_MODEL_TAB_ID);
             }
+        }
+        if (needsInvalidating) {
+            this.invalidateTabs();
         }
     }
     
@@ -104,8 +111,21 @@ export class StvModelTabsComponent implements OnInit, AfterViewInit {
         
         this.graphService.render(graph, graphComponentRef.location.nativeElement.children[0] as HTMLDivElement);
         
+        graphContainer.innerHTML = "";
         graphContainer.append(graphComponentRef.location.nativeElement);
         graphContainer.classList.remove("not-rendered");
+    }
+    
+    invalidateTabs(): void {
+        const tabsComponent = this.tabsRef as unknown as StvTabsComponent;
+        const els = tabsComponent.content?.querySelectorAll(".graph-container")!;
+        els.forEach((el: Element) => {
+            el.classList.add("not-rendered");
+        });
+        const id = tabsComponent.getActiveTabId();
+        if (id >= 0) {
+            this.onTabActivated({ tabContent: tabsComponent.selectedContent!, tabHeader: tabsComponent.selectedHeader! });
+        }
     }
     
     resetTabs(): void {
