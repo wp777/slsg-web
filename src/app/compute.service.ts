@@ -2,6 +2,7 @@ import * as Types from "stv-types";
 import { Injectable } from "@angular/core";
 import * as state from "./state";
 import { ErrorModals } from "./modals/ErrorModals";
+import { Graph } from "./state/models/graph";
 
 interface SuccessResponse {
     status: "success";
@@ -63,12 +64,81 @@ export interface BisimulationCheckingResult {
     coalition: string[];
 }
 
+
+export interface RawSlsgNode {
+    id: number;
+    label: string;
+    props: (number| string)[];
+    bgn?: number;
+    win?: number;
+}
+export interface RawSlsgLink {
+    id: number;
+    source: number;
+    target: number;
+    label: string;
+    props: (number| string)[];
+}
+export interface RawSlsgGraph {
+    label: string;
+    links: RawSlsgLink[];
+    nodes: RawSlsgNode[];
+}
+export interface RawSlsgModel {
+    info: {
+        status: string;
+        solvingTime: number;
+        mcmasCheck: boolean;
+    };
+    models: RawSlsgGraph[];
+}
+export interface SlsgModel {
+    info: {
+        status: string;
+        mcmasCheck: boolean;
+    };
+    globalModel: Graph;
+    localModels: Graph[];
+    localModelNames: string[];
+}
+
 @Injectable({
     providedIn: "root",
 })
 export class ComputeService {
     
     constructor() {}
+    
+    async generateSlsgModel(modelStr: string): Promise<SlsgModel> {
+        const raw = (await this.requestSlsg(modelStr)) as RawSlsgModel;
+        const model: SlsgModel = {
+            info: {
+                status: raw.info.status,
+                mcmasCheck: raw.info.mcmasCheck,
+            },
+            globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!),
+            localModels: raw.models.filter(x => x.label !== "Global model").map(x => this.convertRawSlsgGraphToGraph(x)),
+            localModelNames: raw.models.filter(x => x.label !== "Global model").map(x => x.label) as string[],
+        };
+        return model;
+    }
+    
+    private convertRawSlsgGraphToGraph(g0: RawSlsgGraph): Graph {
+        return {
+            links: g0.links.map(x => ({
+                id: x.id,
+                source: x.source,
+                target: x.target,
+                T: [x.label, ...(x.props ? x.props.map(y => y.toString()) : [])],
+            })),
+            nodes: g0.nodes.map(x => ({
+                id: x.id,
+                bgn: x.bgn ? 1 : 0,
+                win: x.win ? 1 : 0,
+                T: [x.label, ...(x.props ? x.props.map(y => y.toString()) : [])],
+            })),
+        };
+    }
     
     async generateModel(model: state.models.SomeModel, reduced: boolean): Promise<void> {
         const modelParameters: Types.models.parameters.SomeParameters = <any>model.parameters.getPlainModelParameters();
@@ -192,6 +262,10 @@ export class ComputeService {
     
     async requestCompute<TRequest extends Types.actions.Action, TResponse>(requestObject: TRequest): Promise<TResponse> {
         return this.requestJson("POST", "compute", requestObject);
+    }
+    
+    async requestSlsg<TResponse>(modelStr: string): Promise<TResponse> {
+        return this.requestJson("POST", "slsg", { modelStr });
     }
     
     async requestComputeLimitsConfig(): Promise<Types.config.Config> {

@@ -5,6 +5,7 @@ import { Subscription, interval } from "rxjs";
 import { debounce } from "rxjs/operators";
 import { ModelGenerator } from "../ModelGenerator";
 import { SlsgModals } from "src/app/modals/SlsgModals";
+import { ComputeService } from "src/app/compute.service";
 
 @Component({
     selector: "stv-generate-sidebar",
@@ -27,7 +28,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     routerSubscription: Subscription;
     appStateSubscription: Subscription;
     
-    constructor(private router: Router, public appState: state.AppState) {
+    constructor(private router: Router, public appState: state.AppState, private computeService: ComputeService) {
         this.appState.action = new state.actions.Generate();
         
         this.routerSubscription = router.events.subscribe(value => {
@@ -59,7 +60,13 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     }
     
     async onGenerateClick(): Promise<void> {
-        await this.generateModel();
+        const modelStr = await this.generateModel(false);
+        const result = await this.computeService.generateSlsgModel(modelStr);
+        
+        const model = this.getSlsgModel();
+        model.globalModel = result.globalModel;
+        model.localModels = result.localModels;
+        model.localModelNames = result.localModelNames;
     }
     
     async renderModel(): Promise<void> {
@@ -98,7 +105,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         mg.generateLocalModels();
     }
     
-    async generateModel(): Promise<void> {
+    async generateModel(download: boolean = false): Promise<string> {
         const model = this.getSlsgModel().parameters;
         const lines: string[] = [];
         
@@ -141,13 +148,17 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         const modelStr = lines.join("\n");
         console.log(modelStr);
         
-        const element = document.createElement("a");
-        element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(modelStr)}`);
-        element.setAttribute("download", "slsg.txt");
-        element.style.display = "none";
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        if (download) {
+            const element = document.createElement("a");
+            element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(modelStr)}`);
+            element.setAttribute("download", "slsg.txt");
+            element.style.display = "none";
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+        
+        return modelStr;
     }
     
     onAppStateChanged(): void {
