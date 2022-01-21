@@ -84,19 +84,20 @@ export interface RawSlsgGraph {
     links: RawSlsgLink[];
     nodes: RawSlsgNode[];
 }
+export interface SlsgInfo {
+    memUsed: number;
+    memUsedPeak: number;
+    sgsatCpuTime: number;
+    solvingTime: number;
+    status: "SAT" | "UNSAT" | "UNKNOWN";
+    wallTimeSec: number;
+}
 export interface RawSlsgModel {
-    info: {
-        status: string;
-        solvingTime: number;
-        mcmasCheck: boolean;
-    };
+    info: SlsgInfo;
     models: RawSlsgGraph[];
 }
 export interface SlsgModel {
-    info: {
-        status: string;
-        mcmasCheck: boolean;
-    };
+    info: SlsgInfo;
     globalModel: Graph;
     localModels: Graph[];
     localModelNames: string[];
@@ -112,10 +113,7 @@ export class ComputeService {
     async generateSlsgModel(modelStr: string): Promise<SlsgModel> {
         const raw = (await this.requestSlsg(modelStr)) as RawSlsgModel;
         const model: SlsgModel = {
-            info: {
-                status: raw.info.status,
-                mcmasCheck: raw.info.mcmasCheck,
-            },
+            info: { ...raw.info },
             globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!),
             localModels: raw.models.filter(x => x.label !== "Global model").map(x => this.convertRawSlsgGraphToGraph(x)),
             localModelNames: raw.models.filter(x => x.label !== "Global model").map(x => x.label) as string[],

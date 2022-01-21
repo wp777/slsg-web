@@ -3,7 +3,7 @@ This project contains SLSG web interface (based on https://github.com/wp777/stv-
 
 ## UI development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/` (port can be changed in ./src/main.ts). The app will automatically reload if you change any of the source files.
 
 This mode is intended for UI development purposes only. **slsg-server** is not available in this mode and therefore no server-side computations are available.
 ## Build and full development server
@@ -58,3 +58,11 @@ In this mode **slsg-server** is available (it has to be started separately). Use
 1. "Todo" comments:
     * `// @todo short description`
     * `// @todo XY short description` where `XY` should be replaced by initials of the person that is expected to address the issue.
+
+## Deployment (with slsg-server)
+```
+git clone ...
+npm run build
+# proceed with slsg-server deployment
+```
+

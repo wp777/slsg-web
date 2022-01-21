@@ -67,6 +67,8 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         model.globalModel = result.globalModel;
         model.localModels = result.localModels;
         model.localModelNames = result.localModelNames;
+        
+        SlsgModals.showInfo(result.info);
     }
     
     async renderModel(): Promise<void> {

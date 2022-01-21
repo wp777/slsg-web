@@ -31,7 +31,7 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
             id: agents.length,
             numOfLocalStates: 2,
             numOfLocalActions: 2,
-            numOfLocalProps: 2,
+            numOfLocalProps: 1,
         });
         this.getGenerateState().state$.next();
     }
