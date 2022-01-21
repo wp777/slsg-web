@@ -5,4 +5,5 @@ export interface Link {
     
     [key: string]: any;
     T: string[];
+    labelStr?: string;
 }

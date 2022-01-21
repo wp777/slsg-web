@@ -7,4 +7,5 @@ export interface Node {
     T: {
         [key: string]: any;
     };
+    labelStr?: string;
 }

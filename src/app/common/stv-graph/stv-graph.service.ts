@@ -30,6 +30,7 @@ export class StvGraphService {
                 id: `n_${node.id}`,
                 bgn: node.bgn,
                 T: node.T,
+                labelStr: node.labelStr,
             },
             classes: "withStateLabels " + (node.bgn ? "bgn" : ""),
         }));        
@@ -40,6 +41,7 @@ export class StvGraphService {
                 source: `n_${link.source}`,
                 target: `n_${link.target}`,
                 T: link.T,
+                labelStr: link.labelStr,
             },
             classes: "withActionLabels"
         }));
@@ -144,7 +146,12 @@ export class StvGraphService {
         if (!showAll) {
             labels = labels.filter(x=> visible[x[0]]);
         }
-
+        
+        const labelStr = el.data("labelStr");
+        if (labelStr) {
+            return labelStr;
+        }
+        
         return labels.length>0 ? "{"+labels.map(x=>x[0]+":"+JSON.stringify(x[1])).join(",\n ")+"}" : "";
         // return JSON.stringify(el.data("T")).replace(/\"/g, "").split(",").join(",\n ");
     }
@@ -152,6 +159,11 @@ export class StvGraphService {
     private actionLabelsToString(el:cytoscape.EdgeSingular, showAll:boolean = false){
         const visible = this.actionLabels.reduce( (acc,x)=>((acc as any)[x.name]=(showAll ? true:x.display),acc),{});
         if(!Object.values(visible).some(x=>x==true) || !Array.isArray(el.data("T")))return "";
+        
+        const labelStr = el.data("labelStr");
+        if (labelStr) {
+            return labelStr;
+        }
         
         const labels = el.data("T").map((x: string) => visible[x] ? x : "_" );
         return labels.length>0 ? "("+labels.join(", ")+")" : "";

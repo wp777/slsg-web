@@ -128,12 +128,14 @@ export class ComputeService {
                 source: x.source,
                 target: x.target,
                 T: [x.label, ...(x.props ? x.props.map(y => y.toString()) : [])],
+                labelStr: `{ ${x.id}${x.label ? ", " + x.label : ""}${(x.props && x.props.length > 0 ? ["", ...x.props.map(y => "p" + y.toString())] : []).join(", ")} }`,
             })),
             nodes: g0.nodes.map(x => ({
                 id: x.id,
                 bgn: x.bgn ? 1 : 0,
                 win: x.win ? 1 : 0,
                 T: [x.label, ...(x.props ? x.props.map(y => y.toString()) : [])],
+                labelStr: `{ ${x.id}${(x.props && x.props.length > 0 ? ["", ...x.props.map(y => "p" + y.toString())] : []).join(", ")} }`,
             })),
         };
     }
