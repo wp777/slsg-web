@@ -122,14 +122,13 @@ export class ComputeService {
     }
     
     private convertRawSlsgGraphToGraph(g0: RawSlsgGraph): Graph {
-        console.log(g0)
         return {
             links: g0.links.map(x => ({
                 id: x.id,
                 source: x.source,
                 target: x.target,
                 T: [x.label, ...(x.props ? x.props.map(y => y.toString()) : [])],
-                labelStr: `{ ${x.id}${x.label ? ", " + x.label : ""}${(x.props && x.props.length > 0 ? ["", ...x.props.map(y => "p" + y.toString())] : []).join(", ")} }`,
+                // labelStr: `{ ${x.id}${x.label ? ", " + x.label : ""}${(x.props && x.props.length > 0 ? ["", ...x.props.map(y => "p" + y.toString())] : []).join(", ")} }`,
             })),
             nodes: g0.nodes.map(x => ({
                 id: x.id,
