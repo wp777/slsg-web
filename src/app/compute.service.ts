@@ -114,15 +114,16 @@ export class ComputeService {
         const raw = (await this.requestSlsg(modelStr)) as RawSlsgModel;
         const model: SlsgModel = {
             info: { ...raw.info },
-            globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!),
-            localModels: raw.models.filter(x => x.label !== "Global model").map(x => this.convertRawSlsgGraphToGraph(x)),
+            globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!, "slsg-globalModel"),
+            localModels: raw.models.filter(x => x.label !== "Global model").map((x, idx) => this.convertRawSlsgGraphToGraph(x, `slsg-localModel-${idx}`)),
             localModelNames: raw.models.filter(x => x.label !== "Global model").map(x => x.label) as string[],
         };
         return model;
     }
     
-    private convertRawSlsgGraphToGraph(g0: RawSlsgGraph): Graph {
+    private convertRawSlsgGraphToGraph(g0: RawSlsgGraph, graphId: string): Graph {
         return {
+            id: graphId,
             links: g0.links.map(x => ({
                 id: x.id,
                 source: x.source,

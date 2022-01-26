@@ -1,6 +1,8 @@
 import { Component, OnInit } from "@angular/core";
 import * as state from "../../state";
 import { NumberInput } from "src/app/utils/NumberInput";
+import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
+import { ModelGenerator } from "../ModelGenerator";
 
 @Component({
     selector: "stv-generate-slsg-parameters",
@@ -13,12 +15,25 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     get model(): state.models.parameters.Slsg { return this._model; }
     set model(model: state.models.parameters.Slsg) { this._model = model; }
     
-    constructor(private appState: state.AppState) {
+    constructor(private appState: state.AppState, private graphService: StvGraphService) {
         this.getGenerateState().model = new state.models.Slsg();
         this._model = this.getSlsgModelParameters();
     }
 
     ngOnInit(): void {}
+    
+    private afterInputsChanged(): void {
+        this.updateRenderedModel();
+        ModelGenerator.checkContradictions(this.getSlsgModel());
+    }
+    
+    private updateRenderedModel(): void {
+        const nAgents = this.getSlsgModelParameters().agents.length;
+        const model = this.getSlsgModel();
+        for (let i = 0; i < nAgents; ++i) {
+            this.graphService.updateFromSlsgModel(i, model);
+        }
+    }
     
     
     
@@ -90,7 +105,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     onDeleteProtocolClick(index: number): void {
         const protocols = this.getSlsgModelParameters().protocols;
         protocols.splice(index, 1);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onProtocolAgentIdInput(index: number, event: Event): void {
@@ -102,7 +118,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshProtocolAgentIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().protocols[index].agentId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onProtocolLocActIdInput(index: number, event: Event): void {
@@ -114,7 +131,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshProtocolLocActIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().protocols[index].locActId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onProtocolStateClick(index: number, event: Event): void {
@@ -122,7 +140,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshProtocolStateFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().protocols[index].state = input.checked ? "enabled" : "disabled";
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     ///// END protocols
     
@@ -134,7 +153,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     onDeleteTransitionClick(index: number): void {
         const transitions = this.getSlsgModelParameters().transitions;
         transitions.splice(index, 1);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onTransitionAgentIdInput(index: number, event: Event): void {
@@ -146,7 +166,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshTransitionAgentIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().transitions[index].agentId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onTransitionGlobActIdInput(index: number, event: Event): void {
@@ -158,7 +179,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshTransitionGlobActIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().transitions[index].globActId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onTransitionStateClick(index: number, event: Event): void {
@@ -166,7 +188,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshTransitionStateFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().transitions[index].state = input.checked ? "enabled" : "disabled";
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     ///// END transitions
     
@@ -178,7 +201,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     onDeleteValuationClick(index: number): void {
         const valuations = this.getSlsgModelParameters().valuations;
         valuations.splice(index, 1);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onValuationAgentIdInput(index: number, event: Event): void {
@@ -190,7 +214,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshValuationAgentIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().valuations[index].agentId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onValuationLocPropIdInput(index: number, event: Event): void {
@@ -202,7 +227,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshValuationLocPropIdFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().valuations[index].locPropId = parseInt(input.value);
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     
     onValuationStateClick(index: number, event: Event): void {
@@ -210,7 +236,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     }
     refreshValuationStateFromInput(index: number, input: HTMLInputElement) {
         this.getSlsgModelParameters().valuations[index].state = input.checked ? "enabled" : "disabled";
-        this.getGenerateState().state$.next();
+        // this.getGenerateState().state$.next();
+        this.afterInputsChanged();
     }
     ///// END valuations
     
@@ -226,8 +253,8 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
         this.refreshFormulaFromInput(event.target as HTMLInputElement);
     }
     refreshFormulaFromInput(input: HTMLInputElement) {
-        this.getSlsgModelParameters().formula = input.value;
-        this.getGenerateState().state$.next();
+        this.getSlsgModelParameters().formula = input.value.replace(/\n/g, " ");
+        // this.getGenerateState().state$.next();
     }
     ///// END formula
     

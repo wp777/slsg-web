@@ -4,6 +4,7 @@ import * as cytoscape from "cytoscape";
 import { WrappedNodeExpr } from "@angular/compiler";
 import { i18nMetaToJSDoc } from "@angular/compiler/src/render3/view/i18n/meta";
 import { concat, Observable, of } from "rxjs";
+import { Slsg } from "src/app/state/models";
 
 @Injectable({
     providedIn: "root", // singleton service
@@ -11,6 +12,7 @@ import { concat, Observable, of } from "rxjs";
 export class StvGraphService {
 
     private cy: cytoscape.Core | null = null;
+    private cys: { [id: string]: cytoscape.Core } = {};
     private userZoomEnabled: boolean = true;
     private zoomAnimationSpeed: number = 200;
 
@@ -20,6 +22,66 @@ export class StvGraphService {
 
 
     constructor() { }
+    
+    // test(src: any, tgt: any): void {
+    //     console.log(this.cy?.edges().filter(x => x.data("source") == "n_"+src && x.data("target") == "n_"+tgt).addClass("disabled-edge"));
+    //     console.log(this.cy?.edges().filter(x => {
+    //         console.log([x.data("source"),src])
+    //         return true
+    //     }));
+    // }
+    
+    getCy(graphId: string): cytoscape.Core | undefined {
+        return this.cys[graphId];
+    }
+    
+    updateFromSlsgModel(agentId: number, slsgModel: Slsg): void {
+        const cy = this.getCy(`slsg-agent-${agentId}`);
+        if (!cy) {
+            return;
+        }
+        cy.nodes().each(node => {
+            const id = node.data("id");
+            let hasSth: boolean = false;
+            let propId: number | undefined = undefined;
+            for (const prot of slsgModel.parameters.protocols) {
+                if (prot.agentId === agentId && id === `n_${prot.locStateId}`) {
+                    hasSth = true;
+                    break;
+                }
+            }
+            for (const val of slsgModel.parameters.valuations) {
+                if (val.agentId === agentId && id === `n_${val.locStateId}`) {
+                    hasSth = true;
+                    propId = val.state === "enabled" ? val.locPropId : (val.state === "disabled" ? -val.locPropId : undefined);
+                    break;
+                }
+            }
+            node.toggleClass("node-has-prot-or-val", hasSth);
+            let lbl = node.css("content").split("}")[0] + "}";
+            if (propId !== undefined) {
+                lbl += `, ${propId}`;
+            }
+            node.css({content: lbl });
+        });
+        cy.edges().each(edge => {
+            const src = edge.data("source");
+            const tgt = edge.data("target");
+            let trState: boolean | undefined = undefined;
+            let lbl: string | undefined = undefined;
+            for (const tr of slsgModel.parameters.transitions) {
+                if (tr.agentId === agentId && src === `n_${tr.srcLocStateId}` && tgt === `n_${tr.tgtLocStateId}`) {
+                    trState = tr.state === "disabled" ? false : (tr.state === "enabled" ? true : undefined);
+                    lbl = trState === undefined ? undefined : `${tr.globActId}`;
+                }
+            }
+            edge.toggleClass("disabled-edge", trState === false);
+            edge.toggleClass("enabled-edge", trState === true);
+            edge.data("T", [lbl]);
+            edge.data("labelStr", lbl);
+            edge.css({ content: lbl ? lbl : "" })
+        });
+    }
     
     render(graph: state.models.graph.Graph, graphContainer: HTMLDivElement): void {
         // @todo YK (advanced graph rendering) + (use three consts below while initializing graph or call three methods this.update...() after graph initialization)
@@ -83,6 +145,25 @@ export class StvGraphService {
                     "width": "3px",
                     "curve-style": "bezier",
                     "target-arrow-shape": "triangle",
+                    // "line-color": "green",
+                },
+            },
+            {
+                selector: ".enabled-edge",
+                style: {
+                    "line-color": "green",
+                },
+            },
+            {
+                selector: ".disabled-edge",
+                style: {
+                    "line-color": "red",
+                },
+            },
+            {
+                selector: ".node-has-prot-or-val",
+                style: {
+                    "background-color": "orange",
                 },
             },
             {
@@ -117,6 +198,7 @@ export class StvGraphService {
             layout: <cytoscape.BaseLayoutOptions> this.graphLayout,
             style: styleArr,
         });
+        this.cys[graph.id] = this.cy;
 
         // console.log([this.cy.nodes().map(x=>Object.keys(x.data("T")))].flat());
         console.log(this.cy);

@@ -6,6 +6,7 @@ import { debounce } from "rxjs/operators";
 import { ModelGenerator } from "../ModelGenerator";
 import { SlsgModals } from "src/app/modals/SlsgModals";
 import { ComputeService } from "src/app/compute.service";
+import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
 
 @Component({
     selector: "stv-generate-sidebar",
@@ -28,7 +29,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     routerSubscription: Subscription;
     appStateSubscription: Subscription;
     
-    constructor(private router: Router, public appState: state.AppState, private computeService: ComputeService) {
+    constructor(private router: Router, public appState: state.AppState, private computeService: ComputeService, private graphService: StvGraphService) {
         this.appState.action = new state.actions.Generate();
         
         this.routerSubscription = router.events.subscribe(value => {
@@ -60,15 +61,50 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     }
     
     async onGenerateClick(): Promise<void> {
-        const modelStr = await this.generateModel(false);
-        const result = await this.computeService.generateSlsgModel(modelStr);
+        this.showSpinner();
         
-        const model = this.getSlsgModel();
-        model.globalModel = result.globalModel;
-        model.localModels = result.localModels;
-        model.localModelNames = result.localModelNames;
+        try {
+            const modelStr = await this.generateModel(false);
+            if (modelStr !== null) {
+                const result = await this.computeService.generateSlsgModel(modelStr);
+                
+                const model = this.getSlsgModel();
+                model.globalModel = result.globalModel;
+                model.localModels = result.localModels;
+                model.localModelNames = result.localModelNames;
+                
+                SlsgModals.showInfo(result.info);
+            }
+        }
+        catch {
+        }
         
-        SlsgModals.showInfo(result.info);
+        this.hideSpinner();
+    }
+    
+    private showSpinner(): void {
+        this.hideSpinner();
+        
+        const spinner = document.createElement("div");
+        spinner.classList.add("slsg-spinner");
+        spinner.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+        
+        const curtain = document.createElement("div");
+        curtain.classList.add("slsg-curtain");
+        
+        document.body.appendChild(curtain);
+        document.body.appendChild(spinner);
+    }
+    
+    private hideSpinner(): void {
+        const spinner = document.querySelector(".slsg-spinner");
+        const curtain = document.querySelector(".slsg-curtain");
+        if (spinner) {
+            spinner.remove();
+        }
+        if (curtain) {
+            curtain.remove();
+        }
     }
     
     async renderModel(): Promise<void> {
@@ -83,6 +119,8 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                             locActId: 0,
                             state: "disabled",
                         });
+                        this.graphService.updateFromSlsgModel(agentId, this.getSlsgModel());
+                        ModelGenerator.checkContradictions(this.getSlsgModel());
                     }
                     else if (result === "valuation") {
                         this.getSlsgModel().parameters.valuations.push({
@@ -91,6 +129,8 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                             locPropId: 0,
                             state: "disabled",
                         });
+                        this.graphService.updateFromSlsgModel(agentId, this.getSlsgModel());
+                        ModelGenerator.checkContradictions(this.getSlsgModel());
                     }
                 })
             },
@@ -102,25 +142,32 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                     tgtLocStateId: tgtStateId,
                     state: "disabled",
                 });
+                this.graphService.updateFromSlsgModel(agentId, this.getSlsgModel());
+                ModelGenerator.checkContradictions(this.getSlsgModel());
             },
         );
         mg.generateLocalModels();
     }
     
-    async generateModel(download: boolean = false): Promise<string> {
-        const model = this.getSlsgModel().parameters;
+    async generateModel(download: boolean = false): Promise<string | null> {
+        const model = this.getSlsgModel();
+        const res = await ModelGenerator.checkContradictions(this.getSlsgModel(), true, false);
+        if (res.hasContradictions) {
+            return null;
+        }
+        const params = model.parameters;
         const lines: string[] = [];
         
         lines.push("p cnf 1 1");
         lines.push("1 0");
         lines.push("");
         
-        for (const agent of model.agents) {
+        for (const agent of params.agents) {
             lines.push(`kagent ${agent.id} ${agent.numOfLocalStates} ${agent.numOfLocalActions} ${agent.numOfLocalProps}`);
         }
         lines.push("");
         
-        for (const protocol of model.protocols) {
+        for (const protocol of params.protocols) {
             if (protocol.state === "undefined") {
                 continue;
             }
@@ -128,7 +175,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         }
         lines.push("");
         
-        for (const transition of model.transitions) {
+        for (const transition of params.transitions) {
             if (transition.state === "undefined") {
                 continue;
             }
@@ -136,7 +183,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         }
         lines.push("");
         
-        for (const valuation of model.valuations) {
+        for (const valuation of params.valuations) {
             if (valuation.state === "undefined") {
                 continue;
             }
@@ -144,7 +191,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         }
         lines.push("");
         
-        lines.push(`kslsg ${model.formula}`);
+        lines.push(`kslsg ${params.formula}`);
         lines.push("");
         
         const modelStr = lines.join("\n");

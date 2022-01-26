@@ -6,4 +6,5 @@ export interface Graph {
     nodes: Node[];
     nodeClick?: (id: number) => void,
     edgeClick?: (id: number) => void,
+    id: string;
 }
