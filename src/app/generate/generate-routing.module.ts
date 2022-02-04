@@ -48,6 +48,7 @@ const routes: Routes = [
             { ...generateMainComponentRoute },
             { ...generateParametersComponentRoute },
             createModelParametersComponentRoute("slsg", StvGenerateSlsgParametersComponent),
+            createModelParametersComponentRoute("example1", StvGenerateSlsgParametersComponent),
         ],
     },
 ];

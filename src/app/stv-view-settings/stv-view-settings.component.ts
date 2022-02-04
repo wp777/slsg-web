@@ -42,8 +42,9 @@ export class StvViewSettingsComponent implements OnInit, OnDestroy {
         return this.graphService.actionLabels.reduce((acc,x)=>acc&&x.display, true);
     }
 
-    onShowAllStateLabelsChanged(e:Event):void{     
+    onShowAllStateLabelsChanged(e:Event):void{
         let _val = (<HTMLInputElement>e.target).checked;
+        this.graphService.showStateLabels = _val;
         this.graphService.stateLabels.forEach(x=>x.display = _val);
         this.graphService.reloadStateLabels();
     }
@@ -57,6 +58,7 @@ export class StvViewSettingsComponent implements OnInit, OnDestroy {
 
     onShowAllActionLabelsChanged(e:Event):void{     
         let _val = (<HTMLInputElement>e.target).checked;
+        this.graphService.showActionLabels = _val;
         this.graphService.actionLabels.forEach(x=>x.display = _val);
         this.graphService.reloadActionLabels();
     }
@@ -81,6 +83,7 @@ export class StvViewSettingsComponent implements OnInit, OnDestroy {
     onShowActionsChanged(): void {
         this.appState.viewSettings.showActions = !this.appState.viewSettings.showActions;
         this.graphService.actionLabels.forEach(x=>x.display=this.appState.viewSettings.showActions);
+        
         // this.graphService.toggleActionLabels();
         this.graphService.reloadActionLabels();
     }

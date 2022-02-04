@@ -7,6 +7,7 @@ import { ModelGenerator } from "../ModelGenerator";
 import { SlsgModals } from "src/app/modals/SlsgModals";
 import { ComputeService } from "src/app/compute.service";
 import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
+import { SlsgExample, SlsgExamples } from "./Examples";
 
 @Component({
     selector: "stv-generate-sidebar",
@@ -35,6 +36,19 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         this.routerSubscription = router.events.subscribe(value => {
             if (value instanceof NavigationEnd) {
                 const path = router.getCurrentNavigation()?.finalUrl?.root.children.primary?.segments[1]?.path;
+                
+                if (path) {
+                    let example: SlsgExample | null = SlsgExamples[path];
+                    if (example) {
+                        const params = this.getSlsgModel().parameters;
+                        params.agents = example.agents;
+                        params.protocols = example.protocols;
+                        params.transitions = example.transitions;
+                        params.valuations = example.valuations;
+                        params.formula = example.formula;
+                    }
+                }
+                
                 if (path) {
                     this.modelType = path;
                 }
@@ -58,6 +72,12 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     
     async onRenderClick(): Promise<void> {
         await this.renderModel();
+        setTimeout(() => {
+            const nAgents = this.getSlsgModel().parameters.agents.length;
+            for (let i = 0; i < nAgents; ++i) {
+                this.graphService.updateFromSlsgModel(i, this.getSlsgModel());
+            }
+        }, 250);
     }
     
     async onGenerateClick(): Promise<void> {
@@ -68,12 +88,14 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
             if (modelStr !== null) {
                 const result = await this.computeService.generateSlsgModel(modelStr);
                 
-                const model = this.getSlsgModel();
-                model.globalModel = result.globalModel;
-                model.localModels = result.localModels;
-                model.localModelNames = result.localModelNames;
-                
-                SlsgModals.showInfo(result.info);
+                if (result) {
+                    const model = this.getSlsgModel();
+                    model.globalModel = result.globalModel;
+                    model.localModels = result.localModels;
+                    model.localModelNames = result.localModelNames;
+                    
+                    SlsgModals.showInfo(result.info);
+                }
             }
         }
         catch {

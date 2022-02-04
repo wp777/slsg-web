@@ -89,8 +89,9 @@ export interface SlsgInfo {
     memUsedPeak: number;
     sgsatCpuTime: number;
     solvingTime: number;
-    status: "SAT" | "UNSAT" | "UNKNOWN";
+    status: "SAT" | "UNSAT" | "UNKNOWN" | "ERROR";
     wallTimeSec: number;
+    message?: string;
 }
 export interface RawSlsgModel {
     info: SlsgInfo;
@@ -110,8 +111,17 @@ export class ComputeService {
     
     constructor() {}
     
-    async generateSlsgModel(modelStr: string): Promise<SlsgModel> {
+    async generateSlsgModel(modelStr: string): Promise<SlsgModel | null> {
         const raw = (await this.requestSlsg(modelStr)) as RawSlsgModel;
+        try {
+            if (raw.info.status === "ERROR") {
+                throw raw.info.message;
+            }
+        }
+        catch (e) {
+            ErrorModals.showForServerError(`${e}`);
+            return null;
+        }
         const model: SlsgModel = {
             info: { ...raw.info },
             globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!, "slsg-globalModel"),

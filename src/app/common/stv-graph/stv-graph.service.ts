@@ -19,6 +19,8 @@ export class StvGraphService {
     public stateLabels: Array<any> = []; // list of unique state labels
     public actionLabels: Array<any> = []; // list of unique action labels
     private graphLayout: Object = {};
+    showStateLabels: boolean = true;
+    showActionLabels: boolean = true;
 
 
     constructor() { }
@@ -62,7 +64,8 @@ export class StvGraphService {
             if (propId !== undefined) {
                 lbl += `, ${propId}`;
             }
-            node.css({content: lbl });
+            node.data("__lbl__", lbl);
+            node.css({content: this.showStateLabels ? lbl : "" });
         });
         cy.edges().each(edge => {
             const src = edge.data("source");
@@ -79,7 +82,8 @@ export class StvGraphService {
             edge.toggleClass("enabled-edge", trState === true);
             edge.data("T", [lbl]);
             edge.data("labelStr", lbl);
-            edge.css({ content: lbl ? lbl : "" })
+            edge.data("__lbl__", lbl);
+            edge.css({ content: lbl && this.showActionLabels ? lbl : "" });
         });
     }
     
@@ -223,6 +227,9 @@ export class StvGraphService {
     }
 
     private stateLabelsToString(el: cytoscape.EdgeSingular, showAll:boolean = false) {
+        if (!this.showStateLabels) {
+            return "";
+        }
         const visible = this.stateLabels.reduce( (acc,x)=>((acc as any)[x.name]=x.display,acc),{});
         let labels = Object.entries(el.data("T"));
         if (!showAll) {
@@ -239,6 +246,9 @@ export class StvGraphService {
     }
 
     private actionLabelsToString(el:cytoscape.EdgeSingular, showAll:boolean = false){
+        if (!this.showActionLabels) {
+            return "";
+        }
         const visible = this.actionLabels.reduce( (acc,x)=>((acc as any)[x.name]=(showAll ? true:x.display),acc),{});
         if(!Object.values(visible).some(x=>x==true) || !Array.isArray(el.data("T")))return "";
         
@@ -265,6 +275,12 @@ export class StvGraphService {
     reloadStateLabels(): void{
         this.toggleStateLabels();
         this.toggleStateLabels();
+        for (const id in this.cys) {
+            const cy = this.cys[id];
+            cy.nodes().each(node => {
+                node.css({content: this.showStateLabels ? node.data("__lbl__") : "" });
+            });
+        }
     }
 
     toggleStateLabels(): void {
@@ -274,6 +290,12 @@ export class StvGraphService {
     reloadActionLabels(): void{
         this.toggleActionLabels();
         this.toggleActionLabels();
+        for (const id in this.cys) {
+            const cy = this.cys[id];
+            cy.edges().each(edge => {
+                edge.css({ content: this.showActionLabels ? edge.data("__lbl__") : "" });
+            });
+        }
     }
 
     toggleActionLabels(): void {

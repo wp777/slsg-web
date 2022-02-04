@@ -8,7 +8,7 @@ export class SlsgInfoModal extends Modal {
             "Result",
             `
                 <div class="main-message">
-                    Status: <strong>${info.status}</strong><br />
+                    Status: <strong style="color: ${SlsgInfoModal.getSlsgStatusColor(info.status)}">${info.status}</strong><br />
                     Solving time: <strong>${info.solvingTime} s</strong><br />
                     Wall time: <strong>${info.wallTimeSec} s</strong><br />
                     SGSAT CPU time: <strong>${info.sgsatCpuTime} s</strong><br />
@@ -17,6 +17,18 @@ export class SlsgInfoModal extends Modal {
                 </div>
             `,
         );
+    }
+    
+    private static getSlsgStatusColor(status: "SAT" | "UNSAT" | "UNKNOWN"): string {
+        if (status === "SAT") {
+            return "#00aa33";
+        }
+        else if (status === "UNSAT") {
+            return "#aa0033";
+        }
+        else {
+            return "#888";
+        }
     }
     
     static formatMemory(bytes: number): string {
