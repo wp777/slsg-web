@@ -98,7 +98,8 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                 }
             }
         }
-        catch {
+        catch (e) {
+            console.error(e);
         }
         
         this.hideSpinner();

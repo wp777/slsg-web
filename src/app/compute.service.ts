@@ -99,7 +99,7 @@ export interface RawSlsgModel {
 }
 export interface SlsgModel {
     info: SlsgInfo;
-    globalModel: Graph;
+    globalModel: Graph | null;
     localModels: Graph[];
     localModelNames: string[];
 }
@@ -122,9 +122,10 @@ export class ComputeService {
             ErrorModals.showForServerError(`${e}`);
             return null;
         }
+        const globalModel = raw.models.find(x => x.label === "Global model");
         const model: SlsgModel = {
             info: { ...raw.info },
-            globalModel: this.convertRawSlsgGraphToGraph(raw.models.find(x => x.label === "Global model")!, "slsg-globalModel"),
+            globalModel: globalModel ? this.convertRawSlsgGraphToGraph(globalModel, "slsg-globalModel") : null,
             localModels: raw.models.filter(x => x.label !== "Global model").map((x, idx) => this.convertRawSlsgGraphToGraph(x, `slsg-localModel-${idx}`)),
             localModelNames: raw.models.filter(x => x.label !== "Global model").map(x => x.label) as string[],
         };
