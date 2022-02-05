@@ -19,7 +19,7 @@ export class SlsgInfoModal extends Modal {
         );
     }
     
-    private static getSlsgStatusColor(status: "SAT" | "UNSAT" | "UNKNOWN"): string {
+    private static getSlsgStatusColor(status: "SAT" | "UNSAT" | "UNKNOWN" | "ERROR"): string {
         if (status === "SAT") {
             return "#00aa33";
         }
