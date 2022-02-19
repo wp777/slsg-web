@@ -8,6 +8,7 @@ import { SlsgModals } from "src/app/modals/SlsgModals";
 import { ComputeService } from "src/app/compute.service";
 import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
 import { SlsgExample, SlsgExamples } from "./Examples";
+import { SimpleModals } from "src/app/modals/SimpleModals";
 
 @Component({
     selector: "stv-generate-sidebar",
@@ -24,6 +25,16 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     get canGenerate(): boolean { return this._canGenerate; }
     set canGenerate(canGenerate: boolean) { this._canGenerate = canGenerate; }
     
+    _canExportTxt: boolean = false;
+    get canExportTxt(): boolean { return this._canExportTxt; }
+    set canExportTxt(canExportTxt: boolean) { this._canExportTxt = canExportTxt; }
+    
+    _canExportPng: boolean = false;
+    get canExportPng(): boolean { return this._canExportPng; }
+    set canExportPng(canExportPng: boolean) { this._canExportPng = canExportPng; }
+    
+    private hasAnyGraphBeenRendered: boolean = false;
+    
     formula: string | null = null;
     modelType: string = "";
     
@@ -38,18 +49,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                 const path = router.getCurrentNavigation()?.finalUrl?.root.children.primary?.segments[1]?.path;
                 
                 if (path) {
-                    let example: SlsgExample | null = SlsgExamples[path];
-                    if (example) {
-                        const params = this.getSlsgModel().parameters;
-                        params.agents = example.agents;
-                        params.protocols = example.protocols;
-                        params.transitions = example.transitions;
-                        params.valuations = example.valuations;
-                        params.formula = example.formula;
-                    }
-                }
-                
-                if (path) {
+                    this.loadParamsFromExample(path);
                     this.modelType = path;
                 }
             }
@@ -93,6 +93,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
                     model.globalModel = result.globalModel;
                     model.localModels = result.localModels;
                     model.localModelNames = result.localModelNames;
+                    this.onAfterGraphRendered();
                     
                     SlsgModals.showInfo(result.info);
                 }
@@ -170,57 +171,13 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
             },
         );
         mg.generateLocalModels();
+        this.onAfterGraphRendered();
     }
     
     async generateModel(download: boolean = false): Promise<string | null> {
-        const model = this.getSlsgModel();
-        const res = await ModelGenerator.checkContradictions(this.getSlsgModel(), true, false);
-        if (res.hasContradictions) {
-            return null;
-        }
-        const params = model.parameters;
-        const lines: string[] = [];
+        const modelStr = await ModelGenerator.getModelText(this.appState);
         
-        lines.push("p cnf 1 1");
-        lines.push("1 0");
-        lines.push("");
-        
-        for (const agent of params.agents) {
-            lines.push(`kagent ${agent.id} ${agent.numOfLocalStates} ${agent.numOfLocalActions} ${agent.numOfLocalProps}`);
-        }
-        lines.push("");
-        
-        for (const protocol of params.protocols) {
-            if (protocol.state === "undefined") {
-                continue;
-            }
-            lines.push(`kprot ${protocol.state === "enabled" ? "+" : "-"} ${protocol.agentId} ${protocol.locActId} ${protocol.locActId}`);
-        }
-        lines.push("");
-        
-        for (const transition of params.transitions) {
-            if (transition.state === "undefined") {
-                continue;
-            }
-            lines.push(`ktrans ${transition.state === "enabled" ? "+" : "-"} ${transition.agentId} ${transition.srcLocStateId} ${transition.globActId} ${transition.tgtLocStateId}`);
-        }
-        lines.push("");
-        
-        for (const valuation of params.valuations) {
-            if (valuation.state === "undefined") {
-                continue;
-            }
-            lines.push(`kval ${valuation.state === "enabled" ? "+" : "-"} ${valuation.agentId} ${valuation.locStateId} ${valuation.locPropId}`);
-        }
-        lines.push("");
-        
-        lines.push(`kslsg ${params.formula}`);
-        lines.push("");
-        
-        const modelStr = lines.join("\n");
-        console.log(modelStr);
-        
-        if (download) {
+        if (download && modelStr) {
             const element = document.createElement("a");
             element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(modelStr)}`);
             element.setAttribute("download", "slsg.txt");
@@ -233,9 +190,86 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         return modelStr;
     }
     
+    async onClearClick(): Promise<void> {
+        const confirmed = await SimpleModals.confirm("Clearing input", "Do you want to reset all parameters?");
+        if (!confirmed) {
+            return;
+        }
+        // @todo modal confirm
+        const model = this.getSlsgModel();
+        model.globalModel = null;
+        model.localModels = null;
+        model.localModelNames = null;
+        this.onAfterGraphCleared();
+        this.loadParamsFromExample(this.modelType);
+    }
+    
+    async onImportTxtClick(): Promise<void> {
+        // @todo
+        const element = document.createElement("input") as HTMLInputElement;
+        element.setAttribute("type", "file");
+        element.setAttribute("accept", "text/plain");
+        element.style.display = "none";
+        document.body.appendChild(element);
+        const prom = new Promise<void>(resolve => {
+            element.addEventListener("change", async () => {
+                if (element.files && element.files.length >= 1 && element.files[0]) {
+                    const file = element.files[0];
+                    const text = await file.text();
+                    if (text) {
+                        await this.loadModelFromText(text);
+                        resolve();
+                    }
+                }
+            });
+        });
+        element.click();
+        document.body.removeChild(element);
+        await prom;
+    }
+    
+    async loadModelFromText(text: string): Promise<void> {
+        await ModelGenerator.parseAndLoadModel(this.appState, text);
+    }
+    
+    async onExportTxtClick(): Promise<void> {
+        await this.generateModel(true);
+    }
+    
+    async onExportPngClick(): Promise<void> {
+        const cnv = document.querySelector<HTMLCanvasElement>(".graph-container.active canvas[data-id$='-node']");
+        if (!cnv) {
+            return;
+        }
+        let str = cnv.toDataURL("image/png").substr("data:image/png;".length);
+        str = `data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=slsg.png;${str}`;
+        const element = document.createElement("a");
+        element.setAttribute("href", str);
+        element.setAttribute("download", "slsg.png");
+        element.style.display = "none";
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        
+    }
+    
+    private loadParamsFromExample(exampleId: string): void {
+        const example: SlsgExample | null = SlsgExamples[exampleId];
+        if (example) {
+            const params = this.getSlsgModel().parameters;
+            params.agents.splice(0, params.agents.length, ...JSON.parse(JSON.stringify(example.agents)));
+            params.protocols.splice(0, params.protocols.length, ...JSON.parse(JSON.stringify(example.protocols)));
+            params.transitions.splice(0, params.transitions.length, ...JSON.parse(JSON.stringify(example.transitions)));
+            params.valuations.splice(0, params.valuations.length, ...JSON.parse(JSON.stringify(example.valuations)));
+            params.formula = example.formula;
+        }
+    }
+    
     onAppStateChanged(): void {
         this.canRender = this.getGenerateState().canRenderModel();
         this.canGenerate = this.getGenerateState().canGenerateModel();
+        this.canExportTxt = this.getGenerateState().canExportModelToTxt();
+        this.canExportPng = this.canExportModelToPng();
         this.formula = this.getGenerateState().model.formula;
     }
     
@@ -245,6 +279,20 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     
     private getSlsgModel(): state.models.Slsg {
         return this.getGenerateState().model as state.models.Slsg;
+    }
+    
+    private onAfterGraphRendered(): void {
+        this.hasAnyGraphBeenRendered = true;
+        this.canExportPng = this.canExportModelToPng();
+    }
+    
+    private onAfterGraphCleared(): void {
+        this.hasAnyGraphBeenRendered = false;
+        this.canExportPng = this.canExportModelToPng();
+    }
+    
+    private canExportModelToPng(): boolean {
+        return this.hasAnyGraphBeenRendered;
     }
     
 }

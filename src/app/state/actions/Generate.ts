@@ -24,4 +24,8 @@ export class Generate extends Action<GenerateObservableProperties> {
         return this.model.globalModel !== null;
     }
     
+    canExportModelToTxt(): boolean {
+        return this.model.parameters.agents && this.model.parameters.agents.length > 0;
+    }
+    
 }

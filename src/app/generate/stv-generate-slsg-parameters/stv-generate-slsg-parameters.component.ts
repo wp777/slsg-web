@@ -3,6 +3,7 @@ import * as state from "../../state";
 import { NumberInput } from "src/app/utils/NumberInput";
 import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
 import { ModelGenerator } from "../ModelGenerator";
+import { SlsgModals } from "src/app/modals/SlsgModals";
 
 @Component({
     selector: "stv-generate-slsg-parameters",
@@ -102,6 +103,15 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     
     
     ///// BEGIN protocols
+    async onAddProtocolClick(): Promise<void> {
+        const protocols = this.getSlsgModelParameters().protocols;
+        const result = await SlsgModals.showAddProtocolModal();
+        if (result) {
+            protocols.push(result);
+            this.getGenerateState().state$.next();
+        }
+    }
+    
     onDeleteProtocolClick(index: number): void {
         const protocols = this.getSlsgModelParameters().protocols;
         protocols.splice(index, 1);
@@ -150,6 +160,15 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     
     
     ///// BEGIN transitions
+    async onAddTransitionClick(): Promise<void> {
+        const transitions = this.getSlsgModelParameters().transitions;
+        const result = await SlsgModals.showAddTransitionModal();
+        if (result) {
+            transitions.push(result);
+            this.getGenerateState().state$.next();
+        }
+    }
+    
     onDeleteTransitionClick(index: number): void {
         const transitions = this.getSlsgModelParameters().transitions;
         transitions.splice(index, 1);
@@ -198,6 +217,14 @@ export class StvGenerateSlsgParametersComponent implements OnInit {
     
     
     ///// BEGIN valuations
+    async onAddValuationClick(): Promise<void> {
+        const valuations = this.getSlsgModelParameters().valuations;
+        const result = await SlsgModals.showAddValuationModal();
+        if (result) {
+            valuations.push(result);
+            this.getGenerateState().state$.next();
+        }
+    }
     onDeleteValuationClick(index: number): void {
         const valuations = this.getSlsgModelParameters().valuations;
         valuations.splice(index, 1);

@@ -1,7 +1,7 @@
 <h4>Agents</h4>
 <div class="form">
-    <div id="agents-form">
-        <button (click)="onAddAgentClick()" id="add-agent-button" class="theme"><i class="fa fa-plus"></i></button>
+    <div id="agents-form" class="form-with-add-item-button">
+        <button (click)="onAddAgentClick()" id="add-agent-button" class="theme add-item-button"><i class="fa fa-plus"></i></button>
         <table>
             <thead>
                 <tr>
@@ -26,12 +26,13 @@
 </div>
 <h4>Protocols</h4>
 <div class="form">
-    <div id="protocols-form">
+    <div id="protocols-form" class="form-with-add-item-button">
+        <button (click)="onAddProtocolClick()" id="add-protocol-button" class="theme add-item-button"><i class="fa fa-plus"></i></button>
         <table>
             <thead>
                 <tr>
-                    <th title="Local state ID">locStId</th>
                     <th title="Agent ID">agId</th>
+                    <th title="Local state ID">locStId</th>
                     <th title="Local action ID">locActId</th>
                     <th title="Is protocol enabled or disabled">on/off</th>
                     <th></th>
@@ -39,8 +40,9 @@
             </thead>
             <tbody>
                 <tr *ngFor="let protocol of model.protocols; let i = index;">
+                    <th data-for="agentId">{{protocol.agentId}}</th>
+                    <!-- <th data-for="agentId"><input type="number" min="1" step="1" data-input="protocol.agentId" value="{{protocol.agentId}}" (input)="onProtocolAgentIdInput(i, $event)" (blur)="onProtocolAgentIdBlur(i, $event)" /></th> -->
                     <th data-for="locStateId">{{protocol.locStateId}}</th>
-                    <th data-for="agentId"><input type="number" min="1" step="1" data-input="protocol.agentId" value="{{protocol.agentId}}" (input)="onProtocolAgentIdInput(i, $event)" (blur)="onProtocolAgentIdBlur(i, $event)" /></th>
                     <th data-for="locActId"><input type="number" min="1" step="1" data-input="protocol.locActId" value="{{protocol.locActId}}" (input)="onProtocolLocActIdInput(i, $event)" (blur)="onProtocolLocActIdBlur(i, $event)" /></th>
                     <th data-for="state"><input type="checkbox" data-input="protocol.state" [checked]="protocol.state === 'enabled'" (click)="onProtocolStateClick(i, $event)" /></th>
                     <th><button class="delete-protocol-button" (click)="onDeleteProtocolClick(i)"><i class="fa fa-trash"></i></button></th>
@@ -51,13 +53,14 @@
 </div>
 <h4>Transitions</h4>
 <div class="form">
-    <div id="transitions-form">
+    <div id="transitions-form" class="form-with-add-item-button">
+        <button (click)="onAddTransitionClick()" id="add-transition-button" class="theme add-item-button"><i class="fa fa-plus"></i></button>
         <table>
             <thead>
                 <tr>
+                    <th title="Agent ID">agId</th>
                     <th title="Source local state ID">src</th>
                     <th title="Target local state ID">tgt</th>
-                    <th title="Agent ID">agId</th>
                     <th title="Global action ID">globActId</th>
                     <th title="Is transition enabled or disabled">on/off</th>
                     <th></th>
@@ -65,9 +68,10 @@
             </thead>
             <tbody>
                 <tr *ngFor="let transition of model.transitions; let i = index;">
+                    <th data-for="agentId">{{transition.agentId}}</th>
+                    <!-- <th data-for="agentId"><input type="number" min="1" step="1" data-input="transition.agentId" value="{{transition.agentId}}" (input)="onTransitionAgentIdInput(i, $event)" (blur)="onTransitionAgentIdBlur(i, $event)" /></th> -->
                     <th data-for="srcLocStateId">{{transition.srcLocStateId}}</th>
                     <th data-for="tgtLocStateId">{{transition.tgtLocStateId}}</th>
-                    <th data-for="agentId"><input type="number" min="1" step="1" data-input="transition.agentId" value="{{transition.agentId}}" (input)="onTransitionAgentIdInput(i, $event)" (blur)="onTransitionAgentIdBlur(i, $event)" /></th>
                     <th data-for="globActId"><input type="number" min="1" step="1" data-input="transition.globActId" value="{{transition.globActId}}" (input)="onTransitionGlobActIdInput(i, $event)" (blur)="onTransitionGlobActIdBlur(i, $event)" /></th>
                     <th data-for="state"><input type="checkbox" data-input="transition.state" [checked]="transition.state === 'enabled'" (click)="onTransitionStateClick(i, $event)" /></th>
                     <th><button class="delete-transition-button" (click)="onDeleteTransitionClick(i)"><i class="fa fa-trash"></i></button></th>
@@ -78,12 +82,13 @@
 </div>
 <h4>Valuations</h4>
 <div class="form">
-    <div id="valuations-form">
+    <div id="valuations-form" class="form-with-add-item-button">
+        <button (click)="onAddValuationClick()" id="add-valuation-button" class="theme add-item-button"><i class="fa fa-plus"></i></button>
         <table>
             <thead>
                 <tr>
-                    <th title="Local state ID">locStId</th>
                     <th title="Agent ID">agId</th>
+                    <th title="Local state ID">locStId</th>
                     <th title="Local property ID">locPropId</th>
                     <th title="Is valuation enabled or disabled">on/off</th>
                     <th></th>
@@ -91,8 +96,9 @@
             </thead>
             <tbody>
                 <tr *ngFor="let valuation of model.valuations; let i = index;">
+                    <th data-for="agentId">{{valuation.agentId}}</th>
+                    <!-- <th data-for="agentId"><input type="number" min="1" step="1" data-input="valuation.agentId" value="{{valuation.agentId}}" (input)="onValuationAgentIdInput(i, $event)" (blur)="onValuationAgentIdBlur(i, $event)" /></th> -->
                     <th data-for="locStateId">{{valuation.locStateId}}</th>
-                    <th data-for="agentId"><input type="number" min="1" step="1" data-input="valuation.agentId" value="{{valuation.agentId}}" (input)="onValuationAgentIdInput(i, $event)" (blur)="onValuationAgentIdBlur(i, $event)" /></th>
                     <th data-for="locPropId"><input type="number" min="1" step="1" data-input="valuation.locPropId" value="{{valuation.locPropId}}" (input)="onValuationLocPropIdInput(i, $event)" (blur)="onValuationLocPropIdBlur(i, $event)" /></th>
                     <th data-for="state"><input type="checkbox" data-input="valuation.state" [checked]="valuation.state === 'enabled'" (click)="onValuationStateClick(i, $event)" /></th>
                     <th><button class="delete-valuation-button" (click)="onDeleteValuationClick(i)"><i class="fa fa-trash"></i></button></th>

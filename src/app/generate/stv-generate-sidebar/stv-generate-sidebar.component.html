@@ -7,7 +7,13 @@
 </div>
 <div class="actions-container" data-sidebar-tab-id="generate">
     <div class="row">
-        <button class="theme col-12" (click)="onRenderClick()" [disabled]="!canRender"><span>Render</span></button>
-        <button class="theme col-12" (click)="onGenerateClick()" [disabled]="!canGenerate"><span>Generate</span></button>
+        <button class="theme col-8" (click)="onRenderClick()" [disabled]="!canRender"><span>Render</span></button>
+        <button class="theme col-8" (click)="onGenerateClick()" [disabled]="!canGenerate"><span>Generate model</span></button>
+        <button class="col-8" (click)="onClearClick()"><span>Clear</span></button>
+    </div>
+    <div class="row">
+        <button class="sm col-8" (click)="onImportTxtClick()"><span>Import .txt</span></button>
+        <button class="sm col-8" (click)="onExportTxtClick()" [disabled]="!canExportTxt"><span>Export .txt</span></button>
+        <button class="sm col-8" (click)="onExportPngClick()" [disabled]="!canExportPng"><span>Export .png</span></button>
     </div>
 </div>

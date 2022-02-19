@@ -71,12 +71,18 @@ export class StvGraphService {
             const src = edge.data("source");
             const tgt = edge.data("target");
             let trState: boolean | undefined = undefined;
+            let lblParts: string[] = [];
             let lbl: string | undefined = undefined;
             for (const tr of slsgModel.parameters.transitions) {
                 if (tr.agentId === agentId && src === `n_${tr.srcLocStateId}` && tgt === `n_${tr.tgtLocStateId}`) {
                     trState = tr.state === "disabled" ? false : (tr.state === "enabled" ? true : undefined);
-                    lbl = trState === undefined ? undefined : `${tr.globActId}`;
+                    if (trState !== undefined) {
+                        lblParts.push(`${tr.globActId}`);
+                    }
                 }
+            }
+            if (lblParts.length > 0) {
+                lbl = lblParts.join(", ");
             }
             edge.toggleClass("disabled-edge", trState === false);
             edge.toggleClass("enabled-edge", trState === true);
@@ -199,7 +205,7 @@ export class StvGraphService {
             zoomingEnabled: this.userZoomEnabled,
             panningEnabled: true,
             wheelSensitivity: 0.2,
-            layout: <cytoscape.BaseLayoutOptions> this.graphLayout,
+            // layout: <cytoscape.BaseLayoutOptions> this.graphLayout,
             style: styleArr,
         });
         this.cys[graph.id] = this.cy;

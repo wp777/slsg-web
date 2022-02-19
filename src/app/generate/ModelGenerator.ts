@@ -1,6 +1,9 @@
 import { SlsgModals } from "../modals/SlsgModals";
 import * as state from "../state";
 import { Slsg } from "../state/models";
+import { SlsgPlainParameters } from "../state/models/parameters";
+
+type ItemState = "disabled" | "enabled" | "undefined";
 
 export class ModelGenerator {
     
@@ -143,6 +146,123 @@ export class ModelGenerator {
     
     private static async showContradictionError(entryStr: string): Promise<void> {
         await SlsgModals.showContradictionError(entryStr);
+    }
+    
+    static async getModelText(appState: state.AppState): Promise<string | null> {
+        const action = appState.action as state.actions.Generate;
+        const model = action.model as state.models.Slsg;
+        const res = await ModelGenerator.checkContradictions(model, true, false);
+        if (res.hasContradictions) {
+            return null;
+        }
+        const params = model.parameters;
+        const lines: string[] = [];
+        
+        lines.push("p cnf 1 1");
+        lines.push("1 0");
+        lines.push("");
+        
+        for (const agent of params.agents) {
+            lines.push(`kagent ${agent.id} ${agent.numOfLocalStates} ${agent.numOfLocalActions} ${agent.numOfLocalProps}`);
+        }
+        lines.push("");
+        
+        for (const protocol of params.protocols) {
+            if (protocol.state === "undefined") {
+                continue;
+            }
+            lines.push(`kprot ${protocol.state === "enabled" ? "+" : "-"} ${protocol.agentId} ${protocol.locStateId} ${protocol.locActId}`);
+        }
+        lines.push("");
+        
+        for (const transition of params.transitions) {
+            if (transition.state === "undefined") {
+                continue;
+            }
+            lines.push(`ktrans ${transition.state === "enabled" ? "+" : "-"} ${transition.agentId} ${transition.srcLocStateId} ${transition.globActId} ${transition.tgtLocStateId}`);
+        }
+        lines.push("");
+        
+        for (const valuation of params.valuations) {
+            if (valuation.state === "undefined") {
+                continue;
+            }
+            lines.push(`kval ${valuation.state === "enabled" ? "+" : "-"} ${valuation.agentId} ${valuation.locStateId} ${valuation.locPropId}`);
+        }
+        lines.push("");
+        
+        lines.push(`kslsg ${params.formula}`);
+        lines.push("");
+        
+        const modelStr = lines.join("\n");
+        return modelStr;
+    }
+    
+    static parseModel(modelStr: string): SlsgPlainParameters | null {
+        modelStr = modelStr.replace(/\r/g, "");
+        const lines = modelStr
+            .split("\n")
+            .map(line => line.trim().replace(/\s+/g, " "))
+            .filter(line => line.length > 0);
+        let agents: state.models.parameters.SlsgAgent[] = [];
+        let protocols: state.models.parameters.SlsgProtocol[] = [];
+        let transitions: state.models.parameters.SlsgTransition[] = [];
+        let valuations: state.models.parameters.SlsgValuation[] = [];
+        let formula: string = "";
+        for (const line of lines) {
+            if (line.startsWith("kagent")) {
+                const [, agentId, numOfLocalStates, numOfLocalActions, numOfLocalProps] = line.split(" ").map(x => parseInt(x));
+                agents.push({ id: agentId, numOfLocalStates, numOfLocalActions, numOfLocalProps });
+            }
+            else if (line.startsWith("kprot")) {
+                const [, state, agentId, locStateId, locActId] = line.split(" ").map(x => this.parseIntOrState(x)) as [any, ItemState, number, number, number];
+                protocols.push({ state, agentId, locStateId, locActId });
+            }
+            else if (line.startsWith("ktrans")) {
+                const [, state, agentId, srcLocStateId, globActId, tgtLocStateId] = line.split(" ").map(x => this.parseIntOrState(x)) as [any, ItemState, number, number, number, number];
+                transitions.push({ state, agentId, srcLocStateId, globActId, tgtLocStateId });
+            }
+            else if (line.startsWith("kval")) {
+                const [, state, agentId, locStateId, locPropId] = line.split(" ").map(x => this.parseIntOrState(x)) as [any, ItemState, number, number, number];
+                valuations.push({ state, agentId, locStateId, locPropId });
+            }
+            else if (line.startsWith("kslsg")) {
+                formula = line.substr("kslsg ".length)
+            }
+        }
+        return {
+            type: "slsg",
+            agents,
+            protocols,
+            transitions,
+            valuations,
+            formula,
+        };
+    }
+    
+    static parseAndLoadModel(appState: state.AppState, modelStr: string): void {
+        const parsed = this.parseModel(modelStr);
+        if (!parsed) {
+            return;
+        }
+        const action = appState.action as state.actions.Generate;
+        const model = action.model as state.models.Slsg;
+        const params = model.parameters;
+        params.agents.splice(0, params.agents.length, ...JSON.parse(JSON.stringify(parsed.agents)));
+        params.protocols.splice(0, params.protocols.length, ...JSON.parse(JSON.stringify(parsed.protocols)));
+        params.transitions.splice(0, params.transitions.length, ...JSON.parse(JSON.stringify(parsed.transitions)));
+        params.valuations.splice(0, params.valuations.length, ...JSON.parse(JSON.stringify(parsed.valuations)));
+        params.formula = parsed.formula;
+    }
+    
+    private static parseIntOrState(text: string): number | ItemState {
+        if (text === "+") {
+            return "enabled";
+        }
+        if (text === "-") {
+            return "disabled";
+        }
+        return parseInt(text);
     }
     
 }
