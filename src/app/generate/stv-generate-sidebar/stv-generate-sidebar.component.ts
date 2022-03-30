@@ -5,9 +5,9 @@ import { Subscription, interval } from "rxjs";
 import { debounce } from "rxjs/operators";
 import { ModelGenerator } from "../ModelGenerator";
 import { SlsgModals } from "src/app/modals/SlsgModals";
-import { ComputeService } from "src/app/compute.service";
+import { ComputeService, VerificationEngine } from "src/app/compute.service";
 import { StvGraphService } from "src/app/common/stv-graph/stv-graph.service";
-import { SlsgExample, SlsgExamples } from "./Examples";
+import { convertStringExampleToObjectExample, SlsgExample, SlsgExamples, SlsgObjectExample, SlsgStringExample } from "./Examples";
 import { SimpleModals } from "src/app/modals/SimpleModals";
 
 @Component({
@@ -29,6 +29,10 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     get canExportTxt(): boolean { return this._canExportTxt; }
     set canExportTxt(canExportTxt: boolean) { this._canExportTxt = canExportTxt; }
     
+    _canExportJson: boolean = false;
+    get canExportJson(): boolean { return this._canExportJson; }
+    set canExportJson(canExportJson: boolean) { this._canExportJson = canExportJson; }
+    
     _canExportPng: boolean = false;
     get canExportPng(): boolean { return this._canExportPng; }
     set canExportPng(canExportPng: boolean) { this._canExportPng = canExportPng; }
@@ -37,6 +41,8 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     
     formula: string | null = null;
     modelType: string = "";
+    verificationEngine: VerificationEngine = "mcmas";
+    generatedJson: string = "";
     
     routerSubscription: Subscription;
     appStateSubscription: Subscription;
@@ -70,6 +76,10 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         this.router.navigate(["/generate",  value]);
     }
     
+    onVerificationEngineChanged(value: string): void {
+        this.verificationEngine = value as VerificationEngine;
+    }
+    
     async onRenderClick(): Promise<void> {
         await this.renderModel();
         setTimeout(() => {
@@ -80,22 +90,23 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         }, 250);
     }
     
-    async onGenerateClick(): Promise<void> {
+    async onGenerateClick(preparedResponseJson: string | null = null): Promise<void> {
         this.showSpinner();
         
         try {
             const modelStr = await this.generateModel(false);
             if (modelStr !== null) {
-                const result = await this.computeService.generateSlsgModel(modelStr);
+                const result = await this.computeService.generateSlsgModel(modelStr, this.verificationEngine, preparedResponseJson);
                 
                 if (result) {
+                    this.generatedJson = result.json;
                     const model = this.getSlsgModel();
-                    model.globalModel = result.globalModel;
-                    model.localModels = result.localModels;
-                    model.localModelNames = result.localModelNames;
+                    model.globalModel = result.slsgModel.globalModel;
+                    model.localModels = result.slsgModel.localModels;
+                    model.localModelNames = result.slsgModel.localModelNames;
                     this.onAfterGraphRendered();
                     
-                    SlsgModals.showInfo(result.info);
+                    SlsgModals.showInfo(result.slsgModel.info);
                 }
             }
         }
@@ -195,7 +206,7 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         if (!confirmed) {
             return;
         }
-        // @todo modal confirm
+        this.generatedJson = "";
         const model = this.getSlsgModel();
         model.globalModel = null;
         model.localModels = null;
@@ -205,7 +216,6 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     }
     
     async onImportTxtClick(): Promise<void> {
-        // @todo
         const element = document.createElement("input") as HTMLInputElement;
         element.setAttribute("type", "file");
         element.setAttribute("accept", "text/plain");
@@ -232,8 +242,48 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
         await ModelGenerator.parseAndLoadModel(this.appState, text);
     }
     
+    async onImportJsonClick(): Promise<void> {
+        const element = document.createElement("input") as HTMLInputElement;
+        element.setAttribute("type", "file");
+        element.setAttribute("accept", "text/json");
+        element.style.display = "none";
+        document.body.appendChild(element);
+        const prom = new Promise<void>(resolve => {
+            element.addEventListener("change", async () => {
+                if (element.files && element.files.length >= 1 && element.files[0]) {
+                    const file = element.files[0];
+                    const text = await file.text();
+                    if (text) {
+                        await this.loadJson(text);
+                        resolve();
+                    }
+                }
+            });
+        });
+        element.click();
+        document.body.removeChild(element);
+        await prom;
+    }
+    
+    async loadJson(str: string): Promise<void> {
+        await this.loadModelFromText(ModelGenerator.modelStrFromJsonStr(str));
+        await this.onGenerateClick(str);
+    }
+    
     async onExportTxtClick(): Promise<void> {
         await this.generateModel(true);
+    }
+    
+    async onExportJsonClick(): Promise<void> {
+        if (this.generatedJson) {
+            const element = document.createElement("a");
+            element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(this.generatedJson)}`);
+            element.setAttribute("download", "slsg.json");
+            element.style.display = "none";
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
     }
     
     async onExportPngClick(): Promise<void> {
@@ -254,23 +304,33 @@ export class StvGenerateSidebarComponent implements OnInit, OnDestroy {
     }
     
     private loadParamsFromExample(exampleId: string): void {
-        const example: SlsgExample | null = SlsgExamples[exampleId];
-        if (example) {
-            const params = this.getSlsgModel().parameters;
-            params.agents.splice(0, params.agents.length, ...JSON.parse(JSON.stringify(example.agents)));
-            params.protocols.splice(0, params.protocols.length, ...JSON.parse(JSON.stringify(example.protocols)));
-            params.transitions.splice(0, params.transitions.length, ...JSON.parse(JSON.stringify(example.transitions)));
-            params.valuations.splice(0, params.valuations.length, ...JSON.parse(JSON.stringify(example.valuations)));
-            params.formula = example.formula;
+        const rawExample: SlsgExample | null = SlsgExamples[exampleId];
+        if (!rawExample) {
+            return;
         }
+        const example: SlsgObjectExample | null = rawExample.type === "object" ? rawExample : convertStringExampleToObjectExample(rawExample);
+        if (!example) {
+            return;
+        }
+        const params = this.getSlsgModel().parameters;
+        params.agents.splice(0, params.agents.length, ...JSON.parse(JSON.stringify(example.agents)));
+        params.protocols.splice(0, params.protocols.length, ...JSON.parse(JSON.stringify(example.protocols)));
+        params.transitions.splice(0, params.transitions.length, ...JSON.parse(JSON.stringify(example.transitions)));
+        params.valuations.splice(0, params.valuations.length, ...JSON.parse(JSON.stringify(example.valuations)));
+        params.formula = example.formula;
     }
     
     onAppStateChanged(): void {
         this.canRender = this.getGenerateState().canRenderModel();
         this.canGenerate = this.getGenerateState().canGenerateModel();
         this.canExportTxt = this.getGenerateState().canExportModelToTxt();
+        this.canExportJson = this.canExportModelToJson();
         this.canExportPng = this.canExportModelToPng();
         this.formula = this.getGenerateState().model.formula;
+    }
+    
+    private canExportModelToJson(): boolean {
+        return !!this.generatedJson;
     }
     
     private getGenerateState(): state.actions.Generate {

@@ -255,6 +255,12 @@ export class ModelGenerator {
         params.formula = parsed.formula;
     }
     
+    static modelStrFromJsonStr(json: string): string {
+        const data = JSON.parse(json);
+        const modelStr = data.modelStr.replace(/\{\{NL\}\}/g, "\n");
+        return modelStr;
+    }
+    
     private static parseIntOrState(text: string): number | ItemState {
         if (text === "+") {
             return "enabled";

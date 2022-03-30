@@ -49,6 +49,7 @@ const routes: Routes = [
             { ...generateParametersComponentRoute },
             createModelParametersComponentRoute("slsg", StvGenerateSlsgParametersComponent),
             createModelParametersComponentRoute("example1", StvGenerateSlsgParametersComponent),
+            createModelParametersComponentRoute("mcmas-kr21", StvGenerateSlsgParametersComponent),
         ],
     },
 ];

@@ -20,6 +20,8 @@ type RawApproximationResult = ["0" | "1", number, string];
 
 type RawDominoDfsResult = ["0" | "1", string];
 
+export type VerificationEngine = "mcmas" | "stv";
+
 interface RawBisimulationCheckingResult {
     bisimulation_result: boolean;
     coalition: string[];
@@ -111,8 +113,8 @@ export class ComputeService {
     
     constructor() {}
     
-    async generateSlsgModel(modelStr: string): Promise<SlsgModel | null> {
-        const raw = (await this.requestSlsg(modelStr)) as RawSlsgModel;
+    async generateSlsgModel(modelStr: string, engine: VerificationEngine, preparedResponseJson: string | null = null): Promise<{ slsgModel: SlsgModel, json: string } | null> {
+        const { response: raw, json } = (preparedResponseJson ? { response: JSON.parse(preparedResponseJson), json: preparedResponseJson } : (await this.requestSlsg(modelStr, engine))) as { response: RawSlsgModel, json: string };
         try {
             if (raw.info.status === "ERROR") {
                 throw raw.info.message;
@@ -129,7 +131,7 @@ export class ComputeService {
             localModels: raw.models.filter(x => x.label !== "Global model").map((x, idx) => this.convertRawSlsgGraphToGraph(x, `slsg-localModel-${idx}`)),
             localModelNames: raw.models.filter(x => x.label !== "Global model").map(x => x.label) as string[],
         };
-        return model;
+        return { slsgModel: model, json: json };
     }
     
     private convertRawSlsgGraphToGraph(g0: RawSlsgGraph, graphId: string): Graph {
@@ -273,18 +275,18 @@ export class ComputeService {
     }
     
     async requestCompute<TRequest extends Types.actions.Action, TResponse>(requestObject: TRequest): Promise<TResponse> {
-        return this.requestJson("POST", "compute", requestObject);
+        return (await this.requestJson<any, TResponse>("POST", "compute", requestObject)).response;
     }
     
-    async requestSlsg<TResponse>(modelStr: string): Promise<TResponse> {
-        return this.requestJson("POST", "slsg", { modelStr });
+    async requestSlsg<TResponse>(modelStr: string, engine: VerificationEngine): Promise<{ response: TResponse, json: string }> {
+        return (await this.requestJson<any, TResponse>("POST", "slsg", { modelStr, engine }));
     }
     
     async requestComputeLimitsConfig(): Promise<Types.config.Config> {
-        return this.requestJson("GET", "computation-limits-config");
+        return (await this.requestJson<any, Types.config.Config>("GET", "computation-limits-config")).response;
     }
     
-    async requestJson<TRequest, TResponse>(method: "GET"| "POST", path: string, requestObject?: TRequest): Promise<TResponse> {
+    async requestJson<TRequest, TResponse>(method: "GET"| "POST", path: string, requestObject?: TRequest): Promise<{ response: TResponse, json: string }> {
         const response = await fetch(
             `/${path}`,
             {
@@ -302,7 +304,7 @@ export class ComputeService {
             console.error(responseObject.error);
             throw new Error("Server error");
         }
-        return JSON.parse(responseObject.data);
+        return { response: JSON.parse(responseObject.data), json: responseObject.data };
     }
     
 }

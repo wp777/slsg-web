@@ -1,6 +1,11 @@
 <stv-select [value]="modelType" (valueChanged)="onModelTypeChanged($event)" class="model-type-selector first-in-tab-context" data-sidebar-tab-id="generate">
     <div data-value="slsg">Custom SLSG</div>
     <div data-value="example1">Example 1</div>
+    <div data-value="mcmas-kr21">MCMAS KR21</div>
+</stv-select>
+<stv-select [value]="verificationEngine" (valueChanged)="onVerificationEngineChanged($event)" class="verification-engine-selector first-in-tab-context" data-sidebar-tab-id="generate">
+    <div data-value="mcmas">MCMAS</div>
+    <div data-value="stv">STV</div>
 </stv-select>
 <div class="model-parameters-container" data-sidebar-tab-id="generate">
     <router-outlet name="generate-model-parameters"></router-outlet>
@@ -15,5 +20,10 @@
         <button class="sm col-8" (click)="onImportTxtClick()"><span>Import .txt</span></button>
         <button class="sm col-8" (click)="onExportTxtClick()" [disabled]="!canExportTxt"><span>Export .txt</span></button>
         <button class="sm col-8" (click)="onExportPngClick()" [disabled]="!canExportPng"><span>Export .png</span></button>
+    </div>
+    <div class="row">
+        <button class="sm col-8" (click)="onImportJsonClick()"><span>Import .json</span></button>
+        <button class="sm col-8" (click)="onExportJsonClick()" [disabled]="!canExportJson"><span>Export .json</span></button>
+        <button class="sm col-8" style="opacity: 0; pointer-events: none;"><span></span></button>
     </div>
 </div>

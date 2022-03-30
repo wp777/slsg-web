@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ComponentFactoryResolver, ElementRef, OnInit, ViewChild } from "@angular/core";
 import * as state from "src/app/state";
+import { Slsg } from "src/app/state/models";
 import { StvGraphComponent } from "../stv-graph/stv-graph.component";
 import { StvGraphService } from "../stv-graph/stv-graph.service"
 import { StvTabsComponent } from "../stv-tabs/stv-tabs.component";
@@ -114,6 +115,10 @@ export class StvModelTabsComponent implements OnInit, AfterViewInit {
         graphContainer.innerHTML = "";
         graphContainer.append(graphComponentRef.location.nativeElement);
         graphContainer.classList.remove("not-rendered");
+        if (graph.id.startsWith("slsg-agent-")) {
+            const agentId = parseInt(graph.id.substring("slsg-agent-".length));
+            this.graphService.updateFromSlsgModel(agentId, this.model as Slsg);
+        }
     }
     
     invalidateTabs(): void {
